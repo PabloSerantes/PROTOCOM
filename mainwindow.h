@@ -26,5 +26,6 @@ private:
     Ui::MainWindow *ui;
     QSerialPort *QSerialPort1;
     QString strRx;
+    uint8_t bufRx[48], index, nbytes, cks, header;
 };
 #endif // MAINWINDOW_H

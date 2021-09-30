@@ -1,11 +1,12 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-//1:11:23
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    QTimer1 = new QTimer(this);
     QSerialPort1 = new QSerialPort(this);
     QSerialPort1 -> setPortName("COM3");
     QSerialPort1 -> setBaudRate(115200);
@@ -14,8 +15,11 @@ MainWindow::MainWindow(QWidget *parent)
     QSerialPort1 -> setFlowControl(QSerialPort :: NoFlowControl);
 
     connect(QSerialPort1, &QSerialPort::readyRead, this, &MainWindow::onQSerialPort1Rx);
+    connect(QTimer1, &QTimer::timeout, this, &MainWindow::onQTimer1);
 
     header = 0; //Esperando la 'U'
+
+    QTimer1 -> start(50);
 }
 
 MainWindow::~MainWindow()
@@ -24,6 +28,14 @@ MainWindow::~MainWindow()
 }
 
 
+void MainWindow::onQTimer1(){
+    if(header){
+        timeoutRx--;
+        if(!timeoutRx){
+            header = 0;
+        }
+    }
+}
 
 void MainWindow::onQSerialPort1Rx(){
     int count;
@@ -39,14 +51,14 @@ void MainWindow::onQSerialPort1Rx(){
     for (int i = 0; i < count; i++) {
         strRx = strRx + QString("%1").arg(buf[i], 2, 16, QChar('0')).toUpper();
     }
+    ui -> lineEdit -> setText(strRx);
 
     for(int i=0; i < count; i++){
-
-
         switch (header) {
             case 0: //Esperando la 'U'
                 if(buf[i] == 'U'){
                     header = 1;
+                    timeoutRx = 3;
                 }
             break;
             case 1: //N
@@ -104,7 +116,6 @@ void MainWindow::onQSerialPort1Rx(){
                 header = 0;
         }
     }
-    ui -> lineEdit -> setText(strRx);
     delete[] buf;
 }
 
